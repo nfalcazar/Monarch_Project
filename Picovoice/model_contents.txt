@@ -1,0 +1,40 @@
+Porcupine Wake Word:	butterfly
+
+Rhino Model Setup:
+
+##  Intents ##
+
+moveItem
+	Expressions:
+
+	(please) move your $bodyPart:bodypart
+
+	(please) flap your $bodyPart:bodypart
+
+
+infoReq
+	Expressions:
+
+	(please) tell me about (your) [$infoTopic:topic, $bodyPart:bodypart]
+	
+	are you (in) $infoTopic:topic
+
+	what [is, are] your [$infoTopic:topic, $bodyPart:bodypart]
+
+
+
+
+##  Slots  ##
+	bodyPart:
+		wing
+		wings
+		antenna
+		legs
+
+	infoTopic:
+		life
+		status
+		diet
+		migration
+		predators
+		endangered
