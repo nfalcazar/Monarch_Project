@@ -1,8 +1,10 @@
 # Monarch_Project
-- Source Code for Speech Recognition and Motor Control
 
-<br />
+Source Code for Speech Recognition and Motor Control
 
+## Instructions
+
+To test the motor control library, clone the repo and drag the `Monarch_lib` folder into your Arduino libraries folder. You can then import the library into your Arduino sketch using the `#include <Monarch_Lib.h>` tag.
 
 ## Link to Git CheatSheet:
 https://education.github.com/git-cheat-sheet-education.pdf
