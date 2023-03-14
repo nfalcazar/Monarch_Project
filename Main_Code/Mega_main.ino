@@ -7,7 +7,7 @@
 
 //TODO: consistent antennae spelling (I suck at spelling too apparently)
 
-#define BLE_BAUDRATE    115200
+#define BLE_BAUDRATE    9600
 #define USE_SERIAL_MON  1
 
 //Butterfly pins
@@ -20,10 +20,11 @@ const int leg_r_pin   = 7;
 const int player_rx   = 2;
 const int player_tx   = 3;
 
-//Voice Line indexes
-#define INFO_DIET   0
-#define INFO_STATUS 1
-#define INFO_MIGRAT 2
+Monarch myButterfly(
+    antenna_pin, wing_pin_1, wing_pin_2,
+    leg_l_pin, leg_r_pin,
+    player_rx, player_tx
+);
 
 //BLE UART init (Either add funt to Monarch lib or remove Serial1 in Monarch lib) 
 //const int rx_to_BLE = 0;
@@ -34,14 +35,8 @@ char incomingByte = 0;
 char rx_buff[BUFF_SIZE];
 
 void setup() {
-    Serial1.begin(BLE_BAUDRATE);
-    Serial.begin(9600);
-
-    Monarch myButterfly(
-        antenna_pin, wing_pin_1, wing_pin_2,
-        leg_l_pin, leg_r_pin,
-        player_rx, player_tx
-    );
+    //Serial1.begin(BLE_BAUDRATE);
+    //Serial.begin(9600);
 }
 
 void loop() {
@@ -52,9 +47,9 @@ void loop() {
     
     while (Serial1.available() > 0) {
         incomingByte = Serial1.read();
-        Serial.print(incomingByte);
-
         recv += incomingByte;
+        delay(10);  // Trying to match Baudrate led to some errors
+                    // Waiting way longer than min Baudrate as a solution
     }
 
     if (recv != "") {
@@ -64,7 +59,7 @@ void loop() {
         }
 
         //Split string if more than one word
-        i = recv.indexof(' ');
+        i = recv.indexOf(' ');
         if (i != -1) {
             cmd[0] = recv.substring(0, i);
             cmd[1] = recv.substring(i + 1);
@@ -81,11 +76,13 @@ void loop() {
     if (cmd[0] == "error") {
         if(USE_SERIAL_MON)
             Serial.println("Picovoice did not recognize voice CMD.");
+            Serial.println("");
     }
     else if (cmd[0] == "moveItem") {
         if (USE_SERIAL_MON) {
             Serial.print("Recieved Move CMD: ");
-            Serail.println(cmd[1]);
+            Serial.println(cmd[1]);
+            Serial.println("");
         }
 
         if (cmd[1] == "wing" || cmd[1] == "wings") {
@@ -97,28 +94,35 @@ void loop() {
         else if (cmd[1] == "antenna") {
             myButterfly.move_antennae();
         }
+        else {
+            // Rely unable to move body part
+            Serail.print("Unable to move: ");
+            Serial.println(cmd[1]);
+        }
     }
     //TODO: Confirm Voice line numbers
     else if (cmd[0] == "infoReq") {
         if (USE_SERIAL_MON) {
             Serial.print("Recieved Info Request: ");
             Serial.println(cmd[1]);
+            Serial.println("");
         }
 
         if (cmd[1] == "diet") {
-            voice_line = INFO_DIET; //TODO
+            voice_line = VL_INFO_DIET; //TODO
         }
         else if (cmd[1] == "status" || cmd[1] == "endangered") {
-            voice_line = INFO_STATUS;
+            voice_line = VL_INFO_STATUS;
         }
         else if (cmd[1] == "migration") {
-            voice_line = INFO_MIGRAT;
+            voice_line = VL_INFO_MIGRAT;
         }
         //TODO: finish voice line selections
         else {
             if (USE_SERIAL_MON) {
                 Serial.print("Unknown Info Request topic: ")
                 Serial.println(cmd[1]);
+                Serial.println("");
             }
 
             return;
@@ -131,6 +135,7 @@ void loop() {
         if(USE_SERIAL_MON) {
             Serial.print("Unknown Command: ");
             Serial.println(recv);
+            Serial.println("");
         }
 
         return;
