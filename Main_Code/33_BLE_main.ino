@@ -7,7 +7,6 @@
 
 
 #define UART_BAUDRATE       115200
-#define USE_SERIAL_MONITOR  1
 #define ENABLE_BLE_STRING   0
 
 //TODO: Clean up Bluetooth command proc when format determined
@@ -33,9 +32,7 @@ static const float RHINO_SENSITIVITY = 0.5f;
 static void wake_word_callback(void) {
     //Send CMD to MEGA to output detection
     Serial1.write("wake");
-
-    if(USE_SERIAL_MONITOR)
-        Serial.println("Wakeword Detected!");
+    Serial.println("Wakeword Detected!");
 
     delay(500);
 }
@@ -58,31 +55,22 @@ static void inference_callback(pv_inference_t *inference) {
         Serial1.print(cmd);
     }
 
-    if(USE_SERIAL_MONITOR) {
-        Serial.print("Recieved voice cmd: ");
-        Serial.println(cmd);
-    }
+    Serial.print("Recieved voice cmd: ");
+    Serial.println(cmd);
     pv_inference_delete(inference);
 }
 
 
 void setup() {
-    //Serial Monitor Init, must open Monitor on computer to finish init
-    //  - Will stay at "while(!Serial)" until Monitor is opened
-    if(USE_SERIAL_MONITOR) {
-        Serial.begin(9600);
-        while(!Serial);
-    }
-
+    Serial.begin(9600);
+    
     //Picovoice Setup
     pv_status_t status = pv_audio_rec_init();
     if (status != PV_STATUS_SUCCESS) {
-        if(USE_SERIAL_MONITOR) {
-            Serial.print("Audio init failed with ");
-            Serial.println(pv_status_to_string(status));
-        }
+        Serial.print("Audio init failed with ");
+        Serial.println(pv_status_to_string(status));
         while (1);  //Program fails if Picovoice fails to init
-    } else if (USE_SERIAL_MONITOR) {
+    } else {
         Serial.println("Picovoice Audio Init successful.");
     }
 
@@ -102,31 +90,26 @@ void setup() {
         inference_callback,
         &handle);
     if (status != PV_STATUS_SUCCESS) {
-        if(USE_SERIAL_MONITOR) {
-            Serial.print("Picovoice init failed with ");
-            Serial.println(pv_status_to_string(status));
-        }
+        Serial.print("Picovoice init failed with ");
+        Serial.println(pv_status_to_string(status));
         while (1);  //Program fails if Picovoice fails to init
-    } else if(USE_SERIAL_MONITOR) {
+    } else {
         Serial.println("Picovoice Object init successful.");
     }
 
     const char *rhino_context = NULL;
     status = pv_picovoice_context_info(handle, &rhino_context);
     if (status != PV_STATUS_SUCCESS) {
-        if(USE_SERIAL_MONITOR) {
-            Serial.print("retrieving context info failed with");
-            Serial.println(pv_status_to_string(status));
-        }
+        Serial.print("retrieving context info failed with");
+        Serial.println(pv_status_to_string(status));
         while (1);  //Program fails if Picovoice fails to init
-    } else if (USE_SERIAL_MONITOR){
+    } else {
         Serial.println("Picovoice Context init successful.");
     }
 
     //Bluetooth setup
     if (!BLE.begin()) {
-        if(USE_SERIAL_MONITOR)
-            Serial.println("starting Bluetooth® Low Energy module failed!");
+        Serial.println("starting Bluetooth® Low Energy module failed!");
         //while (1);    //Shouldn't just kill program if Bluetooth fails
     }
     else {
@@ -137,8 +120,7 @@ void setup() {
         switchCharacteristic.writeValue(0);
         BLE.advertise();
 
-        if(USE_SERIAL_MONITOR)
-            Serial.println("Bluetooth init successful.");
+        Serial.println("Bluetooth init successful.");
     }
 
     //Output to Mega setup
@@ -149,7 +131,7 @@ void setup() {
 void loop() {
     BLEDevice ble_connection = BLE.central();
     if (ble_connection) {
-        if(USE_SERIAL_MONITOR && ble_is_conn == false)
+        if(ble_is_conn == false)
             Serial.println("Found Bluetooth Connection.");
 
         ble_is_conn = true;
@@ -160,8 +142,7 @@ void loop() {
         if (!ble_connection.connected()) {
             ble_is_conn = false;
 
-            if (USE_SERIAL_MONITOR)
-                Serial.println("Lost Bluetooth connection, defaulting back to Picovoice.");
+            Serial.println("Lost Bluetooth connection, defaulting back to Picovoice.");
             return;
         }
         
@@ -170,12 +151,11 @@ void loop() {
             //Grab string from BLE
             int cmd_len = switchCharacteristic.valueLength();
             if (cmd_len > BLE_RCV_BUFF_LEN - 1) {
-                if(USE_SERIAL_MONITOR) {
-                    Serial.println("Received BT command is too large. cmd: ");
-                    char *res;
-                    sprintf(res,"len: %d   msg: %s", cmd_len, (char *)switchCharacteristic.value()); 
-                    Serial.println(res);
-                }
+                Serial.println("Received BT command is too large. cmd: ");
+                char *res;
+                sprintf(res,"len: %d   msg: %s", cmd_len, (char *)switchCharacteristic.value()); 
+                Serial.println(res);
+                
                 return;
             }
             strncpy(ble_rcv_buff, (char *)switchCharacteristic.value(), cmd_len);
@@ -183,20 +163,16 @@ void loop() {
             ble_rcv_buff[cmd_len] = '\0';
             Serial1.print(ble_rcv_buff);   //Forward cmd to Mega
 
-            if(USE_SERIAL_MONITOR) {
-                Serial.print("Recived Bluetooth command: ");
-                Serial.println(ble_rcv_buff);
-            }
+            Serial.print("Recived Bluetooth command: ");
+            Serial.println(ble_rcv_buff);
             #else
             //Grab Int from BLE
             int value = switchCharacteristic.value();
             String res = String(value);
 
             Serial1.print(res);
-            if(USE_SERIAL_MONITOR) {
-                String term_out = String("Got Bluetooth cmd: ") + res;
-                Serial.println(term_out);
-            }
+            String term_out = String("Got Bluetooth cmd: ") + res;
+            Serial.println(term_out);
             #endif
         }
     }
@@ -205,7 +181,7 @@ void loop() {
         const int16_t *buffer = pv_audio_rec_get_new_buffer();
         if (buffer) {
             const pv_status_t status = pv_picovoice_process(handle, buffer);
-            if (status != PV_STATUS_SUCCESS && USE_SERIAL_MONITOR) {
+            if (status != PV_STATUS_SUCCESS) {
                 Serial.print("Picovoice process failed with ");
                 Serial.println(pv_status_to_string(status));
                 //while(1); //prevent auto term when process fails

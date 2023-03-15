@@ -8,7 +8,6 @@
 //TODO: consistent antennae spelling (I suck at spelling too apparently)
 
 #define BLE_BAUDRATE    9600
-#define USE_SERIAL_MON  1
 
 //Butterfly pins
 //TODO: Confirm pins w/ Sean
@@ -41,7 +40,6 @@ void setup() {
 
 void loop() {
     int i = 0;
-    int voice_line = 0;
     String recv = "";
     String cmd[2];
     
@@ -53,12 +51,11 @@ void loop() {
     }
 
     if (recv != "") {
-        if(USE_SERIAL_MON) {
-            Serial.print("UART Grabbed: ");
-            Serial.print(recv);
-        }
+        Serial.print("UART Grabbed: ");
+        Serial.print(recv);
 
         //Split string if more than one word
+        //Mainly used to grab body part slot from move command
         i = recv.indexOf(' ');
         if (i != -1) {
             cmd[0] = recv.substring(0, i);
@@ -74,16 +71,13 @@ void loop() {
 
 
     if (cmd[0] == "error") {
-        if(USE_SERIAL_MON)
-            Serial.println("Picovoice did not recognize voice CMD.");
-            Serial.println("");
+        Serial.println("Picovoice did not recognize voice CMD.");
+        Serial.println("");
     }
     else if (cmd[0] == "moveItem") {
-        if (USE_SERIAL_MON) {
-            Serial.print("Recieved Move CMD: ");
-            Serial.println(cmd[1]);
-            Serial.println("");
-        }
+        Serial.print("Recieved Move CMD: ");
+        Serial.println(cmd[1]);
+        Serial.println("");
 
         if (cmd[1] == "wing" || cmd[1] == "wings") {
             myButterfly.move_wings();
@@ -100,43 +94,26 @@ void loop() {
             Serial.println(cmd[1]);
         }
     }
-    //TODO: Confirm Voice line numbers
-    else if (cmd[0] == "infoReq") {
-        if (USE_SERIAL_MON) {
-            Serial.print("Recieved Info Request: ");
-            Serial.println(cmd[1]);
-            Serial.println("");
-        }
-
-        if (cmd[1] == "diet") {
-            voice_line = VL_INFO_DIET; //TODO
-        }
-        else if (cmd[1] == "status" || cmd[1] == "endangered") {
-            voice_line = VL_INFO_STATUS;
-        }
-        else if (cmd[1] == "migration") {
-            voice_line = VL_INFO_MIGRAT;
-        }
-        //TODO: finish voice line selections
-        else {
-            if (USE_SERIAL_MON) {
-                Serial.print("Unknown Info Request topic: ")
-                Serial.println(cmd[1]);
-                Serial.println("");
-            }
-
-            return;
-        }
-
-        //Output to Speaker
-        myButterfly.speak(voice_line);
+    else if (cmd[0] == "infoAllParts") {
+        myButterfly.speak(VL_BODY_PARTS);
     }
+    else if (cmd[0] == "infoMigrateWhy") {
+        myButterfly.speak(VL_MIG_WHY);
+    }
+    else if (cmd[0] == "infoMigrateHow") {
+        myButterfly.speak(VL_MIG_HOW);
+    }
+    else if (cmd[0] == "infoCycle") {
+        myButterfly.speak(VL_CYCLE);
+    }
+    else if (cmd[0] == "infoHelp") {
+        myButterfly.speak(VL_HELP);
+    }
+    //infoPart?
     else {
-        if(USE_SERIAL_MON) {
-            Serial.print("Unknown Command: ");
-            Serial.println(recv);
-            Serial.println("");
-        }
+        Serial.print("Unknown Command: ");
+        Serial.println(recv);
+        Serial.println("");
 
         return;
     }
