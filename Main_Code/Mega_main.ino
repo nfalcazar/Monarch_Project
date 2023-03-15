@@ -109,7 +109,6 @@ void loop() {
     else if (cmd[0] == "infoHelp") {
         myButterfly.speak(VL_HELP);
     }
-    //infoPart?
     else {
         Serial.print("Unknown Command: ");
         Serial.println(recv);
