@@ -7,30 +7,38 @@
 #ifndef MONARCH_LIB_H
 #define MONARCH_LIB_H
 
-#include "Arduino.h"
-#include "DFRobotDFPlayerMini.h"
-#include "Servo.h"
+
+
+#include <Arduino.h>
+#include <DFRobotDFPlayerMini.h>
+#include <Servo.h>
 
 class Monarch
 {
     public:
-        Monarch(int antennae_pin, int wing_pin_1, int wing_pin_2,
-                int leg_l_pin, int leg_r_pin,
+        Monarch(int antennae_pin_l, int antennae_pin_r,
+        	int wing_pin_1, int wing_pin_2,
+                int leg_pin_l, int leg_pin_r,
                 int player_rx, int player_tx);
+        void begin();
         void move_antennae();
         void move_wings();
         void move_legs();
         void vol_up();
         void vol_down();
+        void set_vol(int vol);
         void speak(int voice_line);
-        bool get_player_status();
+        int get_player_status();
+        bool is_player_available();
+        // bool is_player_speaking();
     private:
-        int _antennae_pin;
+        int _antennae_pin_l, _antennae_pin_r;
         int _wing_pin_1, _wing_pin_2;
-        Servo _leg_l_servo;
-        Servo _leg_r_servo;
-        int _volume;
+        int _player_rx, _player_tx;
+        int _leg_pin_l, _leg_pin_r;
+        Servo _leg_servo_l, _leg_servo_r;
         DFRobotDFPlayerMini _player;
+        // bool _player_speaking;
 };
 
 #endif

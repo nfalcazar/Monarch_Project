@@ -4,56 +4,74 @@
     Just wing it!
 */
 
-#include "Arduino.h"
-#include "SoftwareSerial.h"
-// #include "DFRobotDFPlayerMini.h"
-#include "Monarch_Lib.h"
+#include <Arduino.h>
+#include <SoftwareSerial.h>
+#include <DFRobotDFPlayerMini.h>
+#include <Monarch_Lib.h>
 
-Monarch::Monarch(int antennae_pin, int wing_pin_1, int wing_pin_2,
-                 int leg_l_pin, int leg_r_pin,
+Monarch::Monarch(int antennae_pin_l, int antennae_pin_r,
+		 int wing_pin_1, int wing_pin_2,
+                 int leg_pin_l, int leg_pin_r,
                  int player_rx, int player_tx)
 {
-    // Initialize serial
-    Serial.begin(9600);  // connection to laptop for debugging
-    Serial1.begin(9600); // connection to nano 33 ble sense
-
     // Initialize pins
-    _antennae_pin = antennae_pin;
+    _antennae_pin_l = antennae_pin_l;
+    _antennae_pin_r = antennae_pin_r;
     _wing_pin_1 = wing_pin_1;
     _wing_pin_2 = wing_pin_2;
-    pinMode(_antennae_pin, OUTPUT);
+    _player_rx = player_rx;
+    _player_tx = player_tx;
+    _leg_pin_l = leg_pin_l;
+    _leg_pin_r = leg_pin_r;
+    pinMode(_antennae_pin_l, OUTPUT);
+    pinMode(_antennae_pin_r, OUTPUT);
     pinMode(_wing_pin_1, OUTPUT);
     pinMode(_wing_pin_2, OUTPUT);
+}
 
-    // Initialize servos
-    // ** NOTE: remember to change the constants if the servos are changed
-    _leg_l_servo.attach(leg_l_pin, 900, 2100);
-    // _leg_r_servo.attach(leg_r_pin, 900, 2100);  // TODO: ADD THE RIGHT LEG
-
-    // Initialize audio player
-    _volume = 30;
-    SoftwareSerial playerSerial(player_rx, player_tx);
+void Monarch::begin()
+{
+    // Setup components with specialized hardware (serial and servos)
+    Serial.begin(9600);  // connection to laptop for debugging
+    Serial1.begin(9600); // connection to nano 33 ble sense
+    
+    SoftwareSerial playerSerial(_player_rx, _player_tx);
     playerSerial.begin(9600);
-    _player.begin(playerSerial);
-    _player.volume(_volume);
+    Serial.println("Initializing dfplayer...");
+    if (!_player.begin(playerSerial)) {
+    	Serial.println("Error: dfplayer not properly configured");
+    }
+    Serial.println("Dfplayer initialized");
+    set_vol(30);
+    
+    _leg_servo_l.attach(_leg_pin_l);
+    _leg_servo_r.attach(_leg_pin_r);
+    _leg_servo_l.write(90);
+    _leg_servo_r.write(90);
+    
+    Serial.println("Setup complete");
 }
 
 void Monarch::move_antennae()
 {
-    // Move antennae
-    digitalWrite(_antennae_pin, HIGH);
+    // Move antennae; TODO: add other antennae
+    Serial.println("Moving antennae");
+    digitalWrite(_antennae_pin_l, HIGH);
+    digitalWrite(_antennae_pin_r, HIGH);
     delay(1000);
-    digitalWrite(_antennae_pin, LOW);
+    digitalWrite(_antennae_pin_l, LOW);
+    digitalWrite(_antennae_pin_r, LOW);
     delay(1000);
 }
 
 void Monarch::move_wings()
 {
-    // Move wings (TODO: CHANGE FOR STEPPER MOTOR)
+    // Move wings
+    Serial.println("Moving wings");
     digitalWrite(_wing_pin_1, HIGH);
     digitalWrite(_wing_pin_2, LOW);
     delay(1000);
-    digitalWrite(_wing_pin_1, HIGH);
+    digitalWrite(_wing_pin_1, LOW);
     digitalWrite(_wing_pin_2, LOW);
     delay(1000);
 }
@@ -61,34 +79,57 @@ void Monarch::move_wings()
 void Monarch::move_legs()
 {
     // Move legs; TODO: add right leg
-    _leg_l_servo.write(90);
-    delay(1000);
-    _leg_l_servo.write(0);
-    delay(1000);
+    Serial.println("Moving legs");
+    _leg_servo_l.write(180);
+    delay(500);
+    _leg_servo_l.write(90);
+    delay(500);
+    _leg_servo_l.write(0);
+    delay(500);
+    _leg_servo_l.write(90);
+    delay(500);
 }
 
 void Monarch::vol_up()
 {
     // Increase volume of player
-    if(_volume < 30)
-        _volume += 5;
+    _player.volumeUp();
 }
 
 void Monarch::vol_down()
 {
     // Decrease volume of player
-    if(_volume >= 0)
-        _volume -= 5;
+    _player.volumeDown();
+}
+
+void Monarch::set_vol(int vol)
+{
+    // Set volume of player to an integer value
+    _player.volume(vol);
 }
 
 void Monarch::speak(int voice_line)
 {
     // Send command for player to speak voice line
+    Serial.println("Speaking");
     _player.play(voice_line);
 }
 
-bool Monarch::get_player_status()
+int Monarch::get_player_status()
 {
-    // Returns whether player is available or not
+    // Returns player's status
+    return _player.readType();
+}
+
+bool Monarch::is_player_available()
+{
+    // Returns whether player is available for commands or not
     return _player.available();
 }
+
+/*
+bool Monarch::is_player_speaking()
+{
+    // Returns whether player has finished speaking or not
+}
+*/
