@@ -11,16 +11,18 @@
 
 //Butterfly pins
 //TODO: Confirm pins w/ Sean
-const int antenna_pin = 31; //33?
-const int wing_pin_1  = 4;
-const int wing_pin_2  = 5;
-const int leg_l_pin   = 6;
-const int leg_r_pin   = 7;
-const int player_rx   = 2;
-const int player_tx   = 3;
+const int antennae_pin_l = 4;
+const int antennae_pin_r = 5;
+const int wing_pin_1  = 12;
+const int wing_pin_2  = 13;
+const int leg_l_pin   = 2;
+const int leg_r_pin   = 3;
+const int player_rx   = 10;
+const int player_tx   = 11;
 
 Monarch myButterfly(
-    antenna_pin, wing_pin_1, wing_pin_2,
+    antennae_pin_l, antennae_pin_r, 
+    wing_pin_1, wing_pin_2,
     leg_l_pin, leg_r_pin,
     player_rx, player_tx
 );
@@ -31,7 +33,6 @@ Monarch myButterfly(
 //SoftwareSerial serialrecv(rx_to_BLE, tx_to_BLE);
 
 char incomingByte = 0;
-char rx_buff[BUFF_SIZE];
 
 void setup() {
     //Serial1.begin(BLE_BAUDRATE);
@@ -40,6 +41,7 @@ void setup() {
 
 void loop() {
     int i = 0;
+    int voice_line = -1;
     String recv = "";
     String cmd[2];
     
@@ -90,24 +92,49 @@ void loop() {
         }
         else {
             // Rely unable to move body part
-            Serail.print("Unable to move: ");
+            Serial.print("Unable to move: ");
             Serial.println(cmd[1]);
         }
     }
-    else if (cmd[0] == "infoAllParts") {
-        myButterfly.speak(VL_BODY_PARTS);
+    else if (cmd[0] == "infoPart") {
+        Serial.print("Recieved Info for bodypart: ");
+        Serial.println(cmd[1]);
+
+        if (cmd[1] == "wing" || cmd[1] == "wings") {
+            voice_line = WINGS_AUDIO_INDEX;
+        }
+        else if (cmd[1] == "leg" || cmd[1] == "legs") {
+            voice_line = LEGS_AUDIO_INDEX;
+        }
+        else if (cmd[1] == "antenna") {
+            voice_line = ANTENNAE_AUDIO_INDEX;
+        }
+
+        if (voice_line == -1) {
+            Serial.println("Unhandled or invalid body part");
+        }
+        else {
+            myButterfly.speak(voice_line);
+        } 
+    }
+    else if (cmd[0] == "infoAllParts") { //have
+       // myButterfly.speak(VL_BODY_PARTS);
+       myButterfly.speak(BODY_AUDIO_INDEX);
+       myButterfly.speak(ANTENNAE_AUDIO_INDEX);
+       myButterfly.speak(WINGS_AUDIO_INDEX);
+       myButterfly.speak(LEGS_AUDIO_INDEX);
     }
     else if (cmd[0] == "infoMigrateWhy") {
-        myButterfly.speak(VL_MIG_WHY);
+        myButterfly.speak(MIGRATION_WHY_AUDIO_INDEX);
     }
     else if (cmd[0] == "infoMigrateHow") {
-        myButterfly.speak(VL_MIG_HOW);
+        myButterfly.speak(MIGRATION_WHERE_AUDIO_INDEX);
     }
     else if (cmd[0] == "infoCycle") {
-        myButterfly.speak(VL_CYCLE);
+        myButterfly.speak(CYCLE_AUDIO_INDEX);
     }
     else if (cmd[0] == "infoHelp") {
-        myButterfly.speak(VL_HELP);
+        myButterfly.speak(HELP_HOW_AUDIO_INDEX);
     }
     else {
         Serial.print("Unknown Command: ");
