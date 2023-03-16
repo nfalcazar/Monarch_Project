@@ -33,7 +33,7 @@ void Monarch::begin()
 {
     // Setup components with specialized hardware (serial and servos)
     Serial.begin(9600);  // connection to laptop for debugging
-    Serial1.begin(9600); // connection to nano 33 ble sense
+    // Serial1.begin(9600); // connection to nano 33 ble sense
     
     SoftwareSerial playerSerial(_player_rx, _player_tx);
     playerSerial.begin(9600);
@@ -54,7 +54,7 @@ void Monarch::begin()
 
 void Monarch::move_antennae()
 {
-    // Move antennae; TODO: add other antennae
+    // Move antennae
     Serial.println("Moving antennae");
     digitalWrite(_antennae_pin_l, HIGH);
     digitalWrite(_antennae_pin_r, HIGH);
@@ -78,15 +78,19 @@ void Monarch::move_wings()
 
 void Monarch::move_legs()
 {
-    // Move legs; TODO: add right leg
+    // Move legs
     Serial.println("Moving legs");
     _leg_servo_l.write(180);
+    _leg_servo_r.write(180);
     delay(500);
     _leg_servo_l.write(90);
+    _leg_servo_r.write(90);
     delay(500);
     _leg_servo_l.write(0);
+    _leg_servo_r.write(0);
     delay(500);
     _leg_servo_l.write(90);
+    _leg_servo_r.write(90);
     delay(500);
 }
 
@@ -115,9 +119,9 @@ void Monarch::speak(int voice_line)
     _player.play(voice_line);
 }
 
-int Monarch::get_player_status()
+int Monarch::get_player_state()
 {
-    // Returns player's status
+    // Returns player's state (stuff for status)
     return _player.readType();
 }
 
@@ -127,9 +131,9 @@ bool Monarch::is_player_available()
     return _player.available();
 }
 
-/*
 bool Monarch::is_player_speaking()
 {
-    // Returns whether player has finished speaking or not
+    // DOESN'T WORK
+    // Returns whether player is speaking or not
+    return true;
 }
-*/
